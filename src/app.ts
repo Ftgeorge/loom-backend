@@ -7,6 +7,8 @@ import {asyncHandler} from "./utils/asyncHandler";
 import { errorHandler } from "./middleware/error";
 import { authRouter } from "./routes/auth.routes";
 import { artisanRouter } from "./routes/artisan.routes";
+import { skillRouter } from "./routes/skill.routes";
+import { jobRouter } from "./routes/job.routes";
 
 
 export function createApp(): Express {
@@ -38,7 +40,14 @@ export function createApp(): Express {
 
     app.use("/artisans", artisanRouter);
 
+    app.use("/skills", skillRouter);
+
+    app.use("/jobs", jobRouter);
+
     app.use(errorHandler);
 
     return app;
 }
+
+// 368104e5-3866-4a3f-a170-267603f9141a
+// 8e38009c-7b30-4aa1-ae91-8191bd5c41f1
