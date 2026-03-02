@@ -6,10 +6,15 @@ import { assignJobTx } from "../repositories/job.repo.tx";
 export async function assignJob(input: {
     jobId: string;
     artisanProfileId: string;
+    customerId: string;
 }) {
     const job = await findJobById(input.jobId);
     if (!job) {
         return { ok: false as const, status: 404, error: "Job not found" };
+    }
+
+    if (job.customer_id !== input.customerId) {
+        return {ok: false as const, status: 403, error: "Not Job Owner"};
     }
 
     if (job.status !== "open") {

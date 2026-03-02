@@ -8,24 +8,29 @@ import { assignJob } from "../services/job.assign.service";
 import { completeJob } from "../services/job.complete.service";
 import { rateJobSchema } from "../validators/job.validators";
 import { rateJob } from "../services/job.rate.service";
+import { requireAuth } from "../middleware/requireAuth";
+import { requireRole } from "../middleware/RequireRole";
 
 export const jobRouter = Router();
 
 jobRouter.post(
-  "/",
-  asyncHandler(async (req, res) => {
-    const parsed = createJobSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: "Invalid body",
-        details: parsed.error.flatten(),
-      });
-    }
+    "/",
+    requireAuth,
+    requireRole("customer"),
+    asyncHandler(async (req, res) => {
+        const parsed = createJobSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({error: "Invalid body", details: parsed.error.flatten() });
+        }
+        console.log("AUTH USER:", req.user);
+        const job = await createJobRequest({
+            customerId: req.user!.id,
+            ...parsed.data,
+        });
 
-    const job = await createJobRequest(parsed.data);
-    return res.status(201).json(job);
-  })
-);
+        return res.status(201).json(job);
+    })
+)
 
 jobRouter.get(
     "/:jobId/matches",
@@ -50,6 +55,8 @@ jobRouter.get(
 
 jobRouter.post(
     "/:jobId/assign",
+    requireAuth,
+    requireRole("customer"),
     asyncHandler(async (req,res) => {
         const parsed = assignJobSchema.safeParse(req.body);
         if (!parsed.success) {
@@ -59,6 +66,7 @@ jobRouter.post(
 
         const result = await assignJob({
             jobId,
+            customerId: req.user!.id,
             artisanProfileId: parsed.data.artisanProfileId,
         });
 
@@ -71,34 +79,38 @@ jobRouter.post(
 );
 
 jobRouter.post(
-    "/:jobId/complete",
-    asyncHandler(async (req ,res) => {
-        const parsed = completeJobSchema.safeParse(req.body);
-        if (!parsed.success){
-        return res.status(400).json({error: "Invalid body", details: parsed.error.flatten() });
-        }
+  "/:jobId/complete",
+  requireAuth,
+  requireRole("artisan"),
+  asyncHandler(async (req, res) => {
+    const result = await completeJob({
+      jobId: req.params.jobId,
+      artisanUserId: req.user!.id,
+    });
 
-        const result = await completeJob({
-            jobId: req.params.jobId,
-            artisanProfileId: parsed.data.artisanProfileId,
-        });
-
-        if (!result.ok) return res.status(result.status).json({error:result.error});
-        return res.status(result.status).json(result.data);
-    })
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(result.status).json(result.data);
+  })
 );
 
 jobRouter.post(
-    "/:jobId/rate",
-    asyncHandler(async (req,res) => {
-        const parsed = rateJobSchema.safeParse(req.body);
-        if (!parsed.success) {
-            return res.status(400).json({ error: "Invalid body", details: parsed.error.flatten ()});
-        }
+  "/:jobId/rate",
+  requireAuth,
+  requireRole("customer"),
+  asyncHandler(async (req, res) => {
+    const parsed = rateJobSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
+    }
 
-        const result = await rateJob({ jobId: req.params.jobId, ...parsed.data});
+    const result = await rateJob({
+      jobId: req.params.jobId,
+      customerId: req.user!.id,
+      rating: parsed.data.rating,
+      comment: parsed.data.comment,
+    });
 
-        if (!result.ok) return res.status(result.status).json({error: result.error});
-        return res.status(result.status).json(result.data);
-    })
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(result.status).json(result.data);
+  })
 );

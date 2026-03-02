@@ -58,7 +58,18 @@ artisanRouter.get(
             });
         }
         
-        const results = await searchArtisans({skill});
-        return res.json({ count: results.length, results});
+        const limitRaw = req.query.limit;
+        const offsetRaw = req.query.offset;
+        const limit =
+        typeof limitRaw === "string"
+            ? Math.min(Math.max(Number(limitRaw) || 20, 1), 50)
+            : 20;
+
+        const offset =
+        typeof offsetRaw === "string"
+            ? Math.max(Number(offsetRaw) || 0, 0)
+            : 0;
+        const {total, results} = await searchArtisans({skill, limit, offset});
+        return res.json({ total, count: results.length, limit, offset, results});
     })
 );
