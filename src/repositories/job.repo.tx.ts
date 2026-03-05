@@ -11,7 +11,7 @@ export async function assignJobTx(
             status = 'assigned'
          WHERE id = $1
          RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, created_at`,
-         [input.jobId, input.artisanProfileId]
+        [input.jobId, input.artisanProfileId]
     );
 
     return res.rows[0] ?? null;
@@ -19,7 +19,7 @@ export async function assignJobTx(
 
 export async function completeJobTx(
     client: PoolClient,
-    input: {jobId: string}
+    input: { jobId: string }
 ) {
     const res = await client.query<JobRow>(
         `UPDATE job_requests
@@ -29,5 +29,21 @@ export async function completeJobTx(
         [input.jobId]
     );
 
+    return res.rows[0] ?? null;
+}
+
+export async function cancelJobTx(
+    client: PoolClient,
+    input: { jobId: string; customerId: string }
+) {
+    const res = await client.query<JobRow>(
+        `UPDATE job_requests
+         SET status = 'cancelled'
+         WHERE id = $1
+           AND customer_id = $2
+           AND status IN ('open', 'assigned')
+         RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, created_at`,
+        [input.jobId, input.customerId]
+    );
     return res.rows[0] ?? null;
 }

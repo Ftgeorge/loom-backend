@@ -1,3 +1,4 @@
+import { pool } from "../db/pool";
 import {query} from "../db/query";
 import type {UserRole, UserRow} from "./user.types";
 
@@ -48,4 +49,31 @@ export async function createUserWithProfileFields(input: {
         ]
     );
     return res.rows[0];
+}
+
+export async function updateUserById(
+    userId: string,
+    updates: Partial<{
+        first_name: string;
+        last_name: string;
+        phone: string;
+        email: string;
+    }>
+) {
+    const fields = Object.keys(updates);
+    if (fields.length === 0) return null;
+
+    const setClause = fields.map((field, i) => `${field} = $${i + 1}`).join(", ");
+
+    const values = fields.map((field) => (updates as any)[field]);
+
+    const result = await pool.query(
+        `UPDATE users
+        SET ${setClause}
+        WHERE id = $${fields.length + 1}
+        RETURNING id, email, first_name, last_name, phone, role`,
+        [...values, userId]
+    );
+
+    return result.rows[0] ?? null;
 }

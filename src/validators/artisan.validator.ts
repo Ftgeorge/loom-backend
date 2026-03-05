@@ -9,3 +9,8 @@ export const artisanRegisterSchema = z.object({
   bio: z.string().optional(),
   yearsOfExperience: z.number().int().min(0, "Years of experience must be a non-negative integer").optional(),
 });
+
+export const updateArtisanSchema = z.object({
+  bio: z.string().max(1000).optional(),
+  years_of_experience: z.number().int().min(0).max(60).optional(),
+});
