@@ -33,13 +33,20 @@ export async function requestEmailVerification(userId: string, email: string) {
         [userId, otpHash, expiresAt]
     );
 
-    // Send via Resend (or fall back to console in dev)
-    if (
-        process.env.RESEND_API_KEY &&
-        process.env.RESEND_API_KEY !== "re_YOUR_KEY_HERE"
-    ) {
+    // ─── DELIVERY ──────────────────────────────────────────
+    // ALWAYS log to console for development convenience
+    console.log("\n" + "=".repeat(40));
+    console.log(`[AUTH] OTP for ${email}: ${otp}`);
+    console.log("=".repeat(40) + "\n");
+
+    // Attempt Resend if configured
+    const canSendEmail = process.env.RESEND_API_KEY &&
+        process.env.RESEND_API_KEY !== "re_YOUR_KEY_HERE" &&
+        !process.env.RESEND_API_KEY.includes("YOUR_KEY");
+
+    if (canSendEmail) {
         try {
-            await resend.emails.send({
+            const { data, error } = await resend.emails.send({
                 from: FROM_EMAIL,
                 to: email,
                 subject: "Your Loom verification code",
@@ -62,13 +69,15 @@ export async function requestEmailVerification(userId: string, email: string) {
                     </div>
                 `,
             });
+
+            if (error) {
+                console.error("[Resend] API rejected email:", error.message);
+            } else {
+                console.log("[Resend] Email sent, ID:", data?.id);
+            }
         } catch (err) {
-            console.error("[Resend] Failed to send email:", err);
-            // Don't throw — OTP is already stored, user can retry
+            console.error("[Resend] Error:", err);
         }
-    } else {
-        // Dev fallback: log to console
-        console.log(`\n[EMAIL SIM] OTP for ${email}: ${otp}\n`);
     }
 
     return { ok: true as const, status: 200 };

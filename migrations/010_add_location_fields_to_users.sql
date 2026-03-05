@@ -1,0 +1,6 @@
+-- 010_add_location_fields_to_users.sql
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS area TEXT,
+ADD COLUMN IF NOT EXISTS city TEXT,
+ADD COLUMN IF NOT EXISTS state TEXT,
+ADD COLUMN IF NOT EXISTS avatar_url TEXT;

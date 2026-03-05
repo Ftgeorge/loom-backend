@@ -1,6 +1,6 @@
 import { pool } from "../db/pool";
-import {query} from "../db/query";
-import type {UserRole, UserRow} from "./user.types";
+import { query } from "../db/query";
+import type { UserRole, UserRow } from "./user.types";
 
 export async function findUserByEmail(email: string) {
     const res = await query<UserRow>(
@@ -12,13 +12,23 @@ export async function findUserByEmail(email: string) {
     return res.rows[0] ?? null;
 }
 
+export async function findUserByPhone(phone: string) {
+    const res = await query<UserRow>(
+        `SELECT id, email, first_name, last_name, phone, role, created_at
+        FROM users
+        WHERE phone = $1`,
+        [phone]
+    );
+    return res.rows[0] ?? null;
+}
+
 export async function createUser(input: {
     email: string;
     passwordHash: string;
     role: UserRole;
 }) {
     const res = await query<UserRow>(
-       `INSERT INTO users (email, password_hash, role)
+        `INSERT INTO users (email, password_hash, role)
         VALUES ($1, $2, $3)
         RETURNING id, email, password_hash, role, created_at`,
         [input.email, input.passwordHash, input.role]
@@ -38,7 +48,7 @@ export async function createUserWithProfileFields(input: {
     const res = await query<UserRow>(
         `INSERT INTO users (email, password_hash, role, first_name, last_name, phone)
         VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, email, password_hash, role, created-at, first_name, last_name, phone`,
+        RETURNING id, email, password_hash, role, created_at, first_name, last_name, phone`,
         [
             input.email,
             input.passwordHash,
@@ -58,6 +68,10 @@ export async function updateUserById(
         last_name: string;
         phone: string;
         email: string;
+        area: string;
+        city: string;
+        state: string;
+        avatar_url: string;
     }>
 ) {
     const fields = Object.keys(updates);
@@ -71,7 +85,7 @@ export async function updateUserById(
         `UPDATE users
         SET ${setClause}
         WHERE id = $${fields.length + 1}
-        RETURNING id, email, first_name, last_name, phone, role`,
+        RETURNING id, email, first_name, last_name, phone, role, area, city, state, avatar_url`,
         [...values, userId]
     );
 
