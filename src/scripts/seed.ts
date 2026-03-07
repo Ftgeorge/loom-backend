@@ -152,6 +152,9 @@ async function main() {
         phone: "08000000000"
     });
 
+    // Mark all seeded users as verified so they can bypass OTP screen in dev
+    await query(`UPDATE users SET email_verified = true`);
+
     console.log("\nSeeding complete! 🚀");
     console.log("-----------------------------------------");
     console.log("Artisans: john@loom.com, jane@loom.com, ahmed@loom.com, blessing@loom.com, chidi@loom.com");

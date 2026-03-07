@@ -34,10 +34,14 @@ export async function requestEmailVerification(userId: string, email: string) {
     );
 
     // ─── DELIVERY ──────────────────────────────────────────
-    // ALWAYS log to console for development convenience
-    console.log("\n" + "=".repeat(40));
-    console.log(`[AUTH] OTP for ${email}: ${otp}`);
-    console.log("=".repeat(40) + "\n");
+    // ALWAYS log to console for development convenience and as a fallback
+    console.log("\n" + "╔══════════════════════════════════════════════════════════════╗");
+    console.log("║               [DEBUG: OTP DELIVERY FALLBACK]                 ║");
+    console.log("╠══════════════════════════════════════════════════════════════╣");
+    console.log(`║ USER: ${email.padEnd(46)} ║`);
+    console.log(`║ CODE: ${otp.padEnd(46)} ║`);
+    console.log(`║ TIME: ${new Date().toLocaleTimeString().padEnd(46)} ║`);
+    console.log("╚══════════════════════════════════════════════════════════════╝" + "\n");
 
     // Attempt Resend if configured
     const canSendEmail = process.env.RESEND_API_KEY &&
