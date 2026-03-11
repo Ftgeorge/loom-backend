@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { findArtisanById, findArtisanByUserId, listArtisans } from "../repositories/artisan.list.repo";
 import { findArtisanReviews } from "../repositories/review.repo";
 import { findEarningsByArtisanProfileId } from "../repositories/earnings.repo";
+import { searchArtisans } from "../services/artisan.search.service";
 
 function qInt(val: unknown, def: number, max: number): number {
     return Math.min(Math.max(Number(typeof val === "string" ? val : def) || def, 0), max);
@@ -53,6 +54,34 @@ artisanListRouter.get(
                 total_withdrawn: "0",
             }
         );
+    })
+);
+
+// ─── GET /artisans/search ──────────────────────────────────
+artisanListRouter.get(
+    "/search",
+    asyncHandler(async (req, res) => {
+        const skill = req.query.skill;
+
+        if (typeof skill !== "string" || skill.trim().length < 2) {
+            return res.status(400).json({
+                error: "skill query param is required, e.g. /artisans/search?skill=plumbing",
+            });
+        }
+
+        const limitRaw = req.query.limit;
+        const offsetRaw = req.query.offset;
+        const limit =
+            typeof limitRaw === "string"
+                ? Math.min(Math.max(Number(limitRaw) || 20, 1), 50)
+                : 20;
+
+        const offset =
+            typeof offsetRaw === "string"
+                ? Math.max(Number(offsetRaw) || 0, 0)
+                : 0;
+        const { total, results } = await searchArtisans({ skill, limit, offset });
+        return res.json({ total, count: results.length, limit, offset, results });
     })
 );
 
