@@ -9,4 +9,11 @@ export type UserRow = {
     first_name?: string | null;
     last_name?: string | null;
     phone?: string | null;
-}
+    area?: string | null;
+    city?: string | null;
+    state?: string | null;
+    lat?: number | null;
+    lng?: number | null;
+    interests?: string[] | null;
+    avatar_url?: string | null;
+};

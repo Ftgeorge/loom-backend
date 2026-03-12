@@ -4,7 +4,7 @@ import type { UserRole, UserRow } from "./user.types";
 
 export async function findUserByEmail(email: string) {
     const res = await query<UserRow>(
-        `SELECT id, email, password_hash, role, created_at
+        `SELECT id, email, password_hash, role, created_at, first_name, last_name, phone, area, city, state, lat, lng, interests, avatar_url
         FROM users
         WHERE email = $1`,
         [email]
@@ -14,7 +14,7 @@ export async function findUserByEmail(email: string) {
 
 export async function findUserByPhone(phone: string) {
     const res = await query<UserRow>(
-        `SELECT id, email, first_name, last_name, phone, role, created_at
+        `SELECT id, email, first_name, last_name, phone, role, created_at, area, city, state, lat, lng, interests, avatar_url
         FROM users
         WHERE phone = $1`,
         [phone]
@@ -72,6 +72,7 @@ export async function updateUserById(
         city: string;
         state: string;
         avatar_url: string;
+        interests: string[];
     }>
 ) {
     const fields = Object.keys(updates);
@@ -85,7 +86,7 @@ export async function updateUserById(
         `UPDATE users
         SET ${setClause}
         WHERE id = $${fields.length + 1}
-        RETURNING id, email, first_name, last_name, phone, role, area, city, state, avatar_url`,
+        RETURNING id, email, first_name, last_name, phone, role, area, city, state, avatar_url, interests`,
         [...values, userId]
     );
 

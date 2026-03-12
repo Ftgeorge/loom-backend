@@ -21,7 +21,3 @@ async function shutdown(signal: string){
 
 process.on("SIGINT", () =>  shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
-
-app.listen(PORT, () => {
-    console.log(`API running on http://localhost:${PORT}`);
-});

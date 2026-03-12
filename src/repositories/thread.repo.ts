@@ -40,7 +40,7 @@ export async function findThreadsByUserId(userId: string, role: "customer" | "ar
          JOIN users other_u ON other_u.id = ${isCustomer ? "artisan_u.id" : "mt.customer_id"}
          LEFT JOIN messages m ON m.thread_id = mt.id
          WHERE ${isCustomer ? "mt.customer_id = $1" : "ap.user_id = $1"}
-         GROUP BY mt.id, other_u.first_name, other_u.last_name, other_u.email
+         GROUP BY mt.id, mt.job_request_id, mt.customer_id, mt.artisan_profile_id, mt.last_message, mt.last_message_at, mt.created_at, other_u.first_name, other_u.last_name, other_u.email
          ORDER BY mt.last_message_at DESC NULLS LAST`,
         [userId]
     );

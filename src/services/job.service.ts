@@ -5,6 +5,8 @@ export async function createJobRequest(input: {
   title: string;
   description: string;
   location: string;
+  budget?: number;
+  urgency?: string;
 }) {
   // Business rules will live here later (auth, quotas, validation rules)
   const job = await createJob(input);

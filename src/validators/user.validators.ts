@@ -8,5 +8,6 @@ export const updateUserSchema = z.object({
     area: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),
-    avatar_url: z.string().url().optional(),
+    avatar_url: z.string().optional(),
+    interests: z.array(z.string()).optional(),
 })

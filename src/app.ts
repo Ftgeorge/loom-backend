@@ -14,6 +14,7 @@ import { jobListRouter } from "./routes/job.list.routes";
 import { userRouter } from "./routes/user.routes";
 import { threadRouter } from "./routes/thread.routes";
 import { notificationRouter } from "./routes/notification.routes";
+import { portfolioRouter } from "./routes/artisan.portfolio.routes";
 
 
 export function createApp(): Express {
@@ -47,6 +48,7 @@ export function createApp(): Express {
     // then the existing router (POST /artisans, PATCH /artisans/me, search)
     app.use("/artisans", artisanListRouter);
     app.use("/artisans", artisanRouter);
+    app.use("/artisans/portfolio", portfolioRouter);
 
     app.use("/skills", skillRouter);
 

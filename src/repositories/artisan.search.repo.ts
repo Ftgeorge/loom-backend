@@ -10,10 +10,50 @@ export type ArtisanSearchRow = {
   years_of_experience: number;
   avg_rating: number;
   ratings_count: number;
+  area: string | null;
+  city: string | null;
+  state: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
-export async function findArtisansBySkill(skillName: string, limit: number, offset: number) {
-  const normalized = skillName.trim().toLowerCase();
+export async function findArtisansBySkill(params: {
+    skill: string;
+    limit: number;
+    offset: number;
+    city?: string;
+    state?: string;
+    area?: string;
+    lat?: number;
+    lng?: number;
+}) {
+  const { skill, limit, offset, city, state, area, lat, lng } = params;
+  const normalized = skill.trim().toLowerCase();
+  
+  let scoreParts = ["0"];
+  let values: any[] = [normalized, limit, offset];
+  let placeholderIndex = 4;
+
+  if (area) {
+    scoreParts.push(`(CASE WHEN u.area ILIKE $${placeholderIndex++} THEN 100 ELSE 0 END)`);
+    values.push(area);
+  }
+  if (city) {
+    scoreParts.push(`(CASE WHEN u.city ILIKE $${placeholderIndex++} THEN 40 ELSE 0 END)`);
+    values.push(city);
+  }
+  if (state) {
+    scoreParts.push(`(CASE WHEN u.state ILIKE $${placeholderIndex++} THEN 10 ELSE 0 END)`);
+    values.push(state);
+  }
+
+  const scoreSql = `(${scoreParts.join(" + ")})`;
+  let orderSql = `ORDER BY ${scoreSql} DESC, avg_rating DESC, ratings_count DESC, ap.years_of_experience DESC`;
+  
+  if (lat && lng) {
+    orderSql = `ORDER BY (POWER(u.lat - $${placeholderIndex}, 2) + POWER(u.lng - $${placeholderIndex + 1}, 2)) ASC, ${scoreSql} DESC, avg_rating DESC`;
+    values.push(lat, lng);
+  }
 
   const res = await query<ArtisanSearchRow>(
     `
@@ -21,6 +61,11 @@ export async function findArtisansBySkill(skillName: string, limit: number, offs
       ap.id AS artisan_profile_id,
       u.first_name,
       u.last_name,
+      u.area,
+      u.city,
+      u.state,
+      u.lat,
+      u.lng,
       ap.bio,
       ap.years_of_experience,
       COALESCE(AVG(r.rating), 0)::float AS avg_rating,
@@ -31,18 +76,21 @@ export async function findArtisansBySkill(skillName: string, limit: number, offs
     JOIN skills s ON s.id = ask.skill_id
     LEFT JOIN ratings r ON r.artisan_id = ap.id
     WHERE lower(trim(s.name)) = $1
-    GROUP BY ap.id, u.first_name, u.last_name, ap.bio, ap.years_of_experience
-    ORDER BY avg_rating DESC, ratings_count DESC, ap.years_of_experience DESC
+    GROUP BY ap.id, u.first_name, u.last_name, u.area, u.city, u.state, u.lat, u.lng, ap.bio, ap.years_of_experience
+    ${orderSql}
     LIMIT $2 OFFSET $3
     `,
-    [normalized, limit, offset]
+    values
   );
 
   return res.rows;
 }
 
-export async function countArtisanBySkill(skillName: string) {
-    const normalized = skillName.trim().toLowerCase();
+export async function countArtisanBySkill(params: {
+    skill: string;
+}) {
+    const { skill } = params;
+    const normalized = skill.trim().toLowerCase();
 
     const res = await query<{total: number}>(
         `

@@ -2,15 +2,13 @@ import { withTx } from "../db/tx";
 import { findArtisanProfileIdByUserId } from "../repositories/artisan.byUser.repo";
 import { findJobById } from "../repositories/job.read.repo";
 import { completeJobTx } from "../repositories/job.repo.tx";
+import { createTransaction, upsertEarnings } from "../repositories/earnings.repo";
 
 export async function completeJob(input: {
   jobId: string;
-  artisanUserId: string; // <- from JWT (req.user.id)
+  artisanUserId: string;
 }) {
   const artisanProfileId = await findArtisanProfileIdByUserId(input.artisanUserId);
-
-  console.log("COMPLETE_JOB artisanUserId:", input.artisanUserId);
-  console.log("COMPLETE_JOB artisanProfileId:", artisanProfileId);
 
   if (!artisanProfileId) {
     return { ok: false as const, status: 404, error: "Artisan profile not found" };
@@ -28,7 +26,27 @@ export async function completeJob(input: {
   }
 
   const updated = await withTx(async (client) => {
-    return completeJobTx(client, { jobId: input.jobId });
+    const jobRes = await completeJobTx(client, { jobId: input.jobId });
+    
+    // Record earnings logic
+    const amount = Number(job.budget || 0);
+    if (amount > 0) {
+      await upsertEarnings({
+        artisanProfileId,
+        additionalEarned: amount,
+        incrementJobs: true,
+      });
+
+      await createTransaction({
+        artisanProfileId,
+        amount,
+        type: 'credit',
+        description: `Payment for ${job.title}`,
+        jobId: job.id
+      });
+    }
+
+    return jobRes;
   });
 
   return { ok: true as const, status: 200, data: updated };

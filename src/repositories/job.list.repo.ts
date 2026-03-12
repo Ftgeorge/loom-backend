@@ -16,12 +16,14 @@ export async function findJobsByCustomerId(
         params[params.indexOf(limit)] = limit; // shift limit index
     }
 
-    // Build cleanly
     const conditions = ["jr.customer_id = $1"];
     const values: unknown[] = [customerId];
     if (status) {
-        conditions.push(`jr.status = $${values.length + 1}`);
-        values.push(status);
+        const statuses = status.split(",").filter(Boolean);
+        if (statuses.length > 0) {
+            conditions.push(`jr.status = ANY($${values.length + 1})`);
+            values.push(statuses);
+        }
     }
     values.push(limit, offset);
 
@@ -87,10 +89,12 @@ export async function findJobsByArtisanId(
     }
     values.push(limit, offset);
 
-    const res = await query<JobRow>(
+    const res = await query<JobRow & { rating_id?: string; rating_value?: number }>(
         `SELECT jr.id, jr.customer_id, jr.title, jr.description,
-                jr.location, jr.status, jr.assigned_artisan_id, jr.created_at
+                jr.location, jr.status, jr.assigned_artisan_id, jr.created_at,
+                r.id AS rating_id, r.rating AS rating_value
          FROM job_requests jr
+         LEFT JOIN ratings r ON r.job_request_id = jr.id
          WHERE ${conditions.join(" AND ")}
          ORDER BY jr.created_at DESC
          LIMIT $${values.length - 1} OFFSET $${values.length}`,

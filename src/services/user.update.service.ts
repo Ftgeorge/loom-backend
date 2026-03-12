@@ -11,6 +11,7 @@ export async function updateUser(input: {
         city?: string;
         state?: string;
         avatar_url?: string;
+        interests?: string[];
     };
 }) {
     try {

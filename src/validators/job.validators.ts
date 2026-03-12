@@ -1,9 +1,12 @@
 import { z } from "zod";
 
 export const createJobSchema = z.object({
-  title: z.string().min(3),
+  title: z.string().min(3).optional(),
+  skill: z.string().min(2).optional(),
   description: z.string().min(10),
   location: z.string().min(2),
+  budget: z.number().int().nonnegative().optional(),
+  urgency: z.string().optional(),
 });
 
 export const assignJobSchema = z.object({

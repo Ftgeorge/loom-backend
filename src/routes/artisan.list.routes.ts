@@ -3,7 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { requireAuth } from "../middleware/requireAuth";
 import { findArtisanById, findArtisanByUserId, listArtisans } from "../repositories/artisan.list.repo";
 import { findArtisanReviews } from "../repositories/review.repo";
-import { findEarningsByArtisanProfileId } from "../repositories/earnings.repo";
+import { findEarningsByArtisanProfileId, findTransactionsByArtisanId } from "../repositories/earnings.repo";
+import { findPortfolioByArtisanId } from "../repositories/artisan.portfolio.repo";
 import { searchArtisans } from "../services/artisan.search.service";
 
 function qInt(val: unknown, def: number, max: number): number {
@@ -18,7 +19,22 @@ artisanListRouter.get(
     asyncHandler(async (req, res) => {
         const limit = qInt(req.query.limit, 20, 50);
         const offset = qInt(req.query.offset, 0, 10000);
-        const artisans = await listArtisans(limit, offset);
+        const { city, state, area, lat, lng, interests } = req.query;
+        
+        const interestsArr = Array.isArray(interests) 
+            ? interests as string[] 
+            : (typeof interests === "string" ? [interests] : undefined);
+
+        const artisans = await listArtisans({
+            limit,
+            offset,
+            city: city as string,
+            state: state as string,
+            area: area as string,
+            lat: lat ? Number(lat) : undefined,
+            lng: lng ? Number(lng) : undefined,
+            interests: interestsArr
+        });
         return res.json({ count: artisans.length, limit, offset, results: artisans });
     })
 );
@@ -31,7 +47,9 @@ artisanListRouter.get(
     asyncHandler(async (req, res) => {
         const artisan = await findArtisanByUserId(req.user!.id);
         if (!artisan) return res.status(404).json({ error: "Artisan profile not found for this user" });
-        return res.json(artisan);
+        const portfolio = await findPortfolioByArtisanId(artisan.artisan_profile_id);
+        const reviews = await findArtisanReviews(artisan.artisan_profile_id);
+        return res.json({ ...artisan, portfolio, reviews });
     })
 );
 
@@ -43,17 +61,21 @@ artisanListRouter.get(
         const artisan = await findArtisanByUserId(req.user!.id);
         if (!artisan) return res.status(404).json({ error: "Artisan profile not found" });
 
-        const earnings = await findEarningsByArtisanProfileId(artisan.artisan_profile_id);
+        const [earnings, transactions] = await Promise.all([
+            findEarningsByArtisanProfileId(artisan.artisan_profile_id),
+            findTransactionsByArtisanId(artisan.artisan_profile_id, 30)
+        ]);
 
-        return res.json(
-            earnings ?? {
+        return res.json({
+            ...(earnings ?? {
                 artisan_profile_id: artisan.artisan_profile_id,
                 total_earned: "0",
                 jobs_completed: 0,
                 pending_payout: "0",
                 total_withdrawn: "0",
-            }
-        );
+            }),
+            transactions
+        });
     })
 );
 
@@ -80,7 +102,17 @@ artisanListRouter.get(
             typeof offsetRaw === "string"
                 ? Math.max(Number(offsetRaw) || 0, 0)
                 : 0;
-        const { total, results } = await searchArtisans({ skill, limit, offset });
+        const { city, state, area, lat, lng } = req.query;
+        const { total, results } = await searchArtisans({ 
+            skill, 
+            limit, 
+            offset,
+            city: city as string,
+            state: state as string,
+            area: area as string,
+            lat: lat ? Number(lat) : undefined,
+            lng: lng ? Number(lng) : undefined
+        });
         return res.json({ total, count: results.length, limit, offset, results });
     })
 );
@@ -92,6 +124,7 @@ artisanListRouter.get(
         const artisan = await findArtisanById(String(req.params.id));
         if (!artisan) return res.status(404).json({ error: "Artisan not found" });
         const reviews = await findArtisanReviews(String(req.params.id));
-        return res.json({ ...artisan, reviews });
+        const portfolio = await findPortfolioByArtisanId(String(req.params.id));
+        return res.json({ ...artisan, reviews, portfolio });
     })
 );

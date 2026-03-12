@@ -10,7 +10,44 @@ import { upgradeToArtisan } from "../services/artisan.upgrade.service";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireRole } from "../middleware/requireRole";
 
+import { submitVerification, getMyVerificationStatus } from "../services/verification.service";
+
 export const artisanRouter = Router();
+
+// ─── GET /artisans/me/verification ───────────────────────
+artisanRouter.get(
+  "/me/verification",
+  requireAuth,
+  requireRole("artisan"),
+  asyncHandler(async (req, res) => {
+    const result = await getMyVerificationStatus(req.user!.id);
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(200).json(result.data);
+  })
+);
+
+// ─── POST /artisans/me/verification ──────────────────────
+artisanRouter.post(
+  "/me/verification",
+  requireAuth,
+  requireRole("artisan"),
+  asyncHandler(async (req, res) => {
+    const { documentType, documentNumber, documentUrl } = req.body;
+    if (!documentType || !documentUrl) {
+      return res.status(400).json({ error: "documentType and documentUrl are required" });
+    }
+
+    const result = await submitVerification({
+      userId: req.user!.id,
+      documentType,
+      documentNumber,
+      documentUrl
+    });
+
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(201).json(result.data);
+  })
+);
 
 // ─── POST /artisans/me/profile ───────────────────────────
 // For already registered users that now want a professional profile.

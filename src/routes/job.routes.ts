@@ -11,7 +11,7 @@ import { rateJob } from "../services/job.rate.service";
 import { cancelJob } from "../services/job.cancel.service";
 import { acceptJob } from "../services/job.accept.service";
 import { requireAuth } from "../middleware/requireAuth";
-import { requireRole } from "../middleware/RequireRole";
+import { requireRole } from "../middleware/requireRole";
 
 export const jobRouter = Router();
 
@@ -27,7 +27,11 @@ jobRouter.post(
     console.log("AUTH USER:", req.user);
     const job = await createJobRequest({
       customerId: req.user!.id,
-      ...parsed.data,
+      title: parsed.data.title || parsed.data.skill || "New Job Request",
+      description: parsed.data.description,
+      location: parsed.data.location,
+      budget: parsed.data.budget,
+      urgency: parsed.data.urgency,
     });
 
     return res.status(201).json(job);

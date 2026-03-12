@@ -10,7 +10,7 @@ export async function assignJobTx(
          SET assigned_artisan_id = $2,
             status = 'assigned'
          WHERE id = $1
-         RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, created_at`,
+         RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, budget, urgency, created_at`,
         [input.jobId, input.artisanProfileId]
     );
 
@@ -25,7 +25,7 @@ export async function completeJobTx(
         `UPDATE job_requests
          SET status = 'completed'
         WHERE id = $1
-        RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, created_at`,
+        RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, budget, urgency, created_at`,
         [input.jobId]
     );
 

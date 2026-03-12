@@ -19,7 +19,19 @@ export async function loginUser(input: {email: string, password: string}){
         status: 200,
         data: {
             token,
-            user: {id: user.id, email: user.email, role: user.role},
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phone: user.phone,
+                area: user.area,
+                city: user.city,
+                state: user.state,
+                interests: user.interests,
+                avatar_url: user.avatar_url
+            },
         }
     }
 }
