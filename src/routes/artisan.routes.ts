@@ -11,6 +11,8 @@ import { requireAuth } from "../middleware/requireAuth";
 import { requireRole } from "../middleware/requireRole";
 
 import { submitVerification, getMyVerificationStatus } from "../services/verification.service";
+import { findArtisanProfileIdByUserId } from "../repositories/artisan.byUser.repo";
+import { removeSkillFromArtisan, listArtisanSkills } from "../repositories/artisan-skill.repo";
 
 export const artisanRouter = Router();
 
@@ -135,5 +137,31 @@ artisanRouter.patch(
     }
 
     return res.status(result.status).json(result.data);
+  })
+);
+
+artisanRouter.get(
+  "/me/skills",
+  requireAuth,
+  requireRole("artisan"),
+  asyncHandler(async (req, res) => {
+    const profileId = await findArtisanProfileIdByUserId(req.user!.id);
+    if (!profileId) return res.status(404).json({ error: "Artisan profile not found" });
+
+    const skills = await listArtisanSkills(profileId);
+    return res.json(skills);
+  })
+);
+
+artisanRouter.delete(
+  "/me/skills/:skillId",
+  requireAuth,
+  requireRole("artisan"),
+  asyncHandler(async (req, res) => {
+    const profileId = await findArtisanProfileIdByUserId(req.user!.id);
+    if (!profileId) return res.status(404).json({ error: "Artisan profile not found" });
+
+    await removeSkillFromArtisan({ artisanProfileId: profileId, skillId: String(req.params.skillId) });
+    return res.status(204).send();
   })
 );

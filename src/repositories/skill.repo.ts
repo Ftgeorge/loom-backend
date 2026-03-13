@@ -31,3 +31,12 @@ export async function findSkillByName(name: string) {
 
   return res.rows[0] ?? null;
 }
+
+export async function findAllSkills() {
+  const res = await query<SkillRow>(
+    `SELECT id, name, created_at
+     FROM skills
+     ORDER BY name ASC`
+  );
+  return res.rows;
+}

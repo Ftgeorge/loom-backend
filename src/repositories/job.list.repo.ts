@@ -38,7 +38,11 @@ export async function findJobsByCustomerId(
             jr.assigned_artisan_id,
             jr.created_at,
             u.email AS customer_email,
-            au.email AS artisan_email
+            u.first_name AS customer_first_name,
+            u.last_name AS customer_last_name,
+            au.email AS artisan_email,
+            au.first_name AS artisan_first_name,
+            au.last_name AS artisan_last_name
          FROM job_requests jr
          JOIN users u ON u.id = jr.customer_id
          LEFT JOIN artisan_profiles ap ON ap.id = jr.assigned_artisan_id
@@ -63,7 +67,9 @@ export async function findOpenJobs(limit = 20, offset = 0) {
             jr.status,
             jr.assigned_artisan_id,
             jr.created_at,
-            u.email AS customer_email
+            u.email AS customer_email,
+            u.first_name AS customer_first_name,
+            u.last_name AS customer_last_name
          FROM job_requests jr
          JOIN users u ON u.id = jr.customer_id
          WHERE jr.status = 'open'
@@ -92,8 +98,12 @@ export async function findJobsByArtisanId(
     const res = await query<JobRow & { rating_id?: string; rating_value?: number }>(
         `SELECT jr.id, jr.customer_id, jr.title, jr.description,
                 jr.location, jr.status, jr.assigned_artisan_id, jr.created_at,
+                u.email AS customer_email,
+                u.first_name AS customer_first_name,
+                u.last_name AS customer_last_name,
                 r.id AS rating_id, r.rating AS rating_value
          FROM job_requests jr
+         JOIN users u ON u.id = jr.customer_id
          LEFT JOIN ratings r ON r.job_request_id = jr.id
          WHERE ${conditions.join(" AND ")}
          ORDER BY jr.created_at DESC
@@ -125,7 +135,9 @@ export async function findJobByIdFull(jobId: string) {
             u.email AS customer_email,
             u.first_name AS customer_first_name,
             u.last_name AS customer_last_name,
-            au.email AS artisan_email
+            au.email AS artisan_email,
+            au.first_name AS artisan_first_name,
+            au.last_name AS artisan_last_name
          FROM job_requests jr
          JOIN users u ON u.id = jr.customer_id
          LEFT JOIN artisan_profiles ap ON ap.id = jr.assigned_artisan_id
@@ -141,8 +153,11 @@ export async function countJobsByCustomerId(customerId: string, status?: string)
     const conditions = ["customer_id = $1"];
     const values: unknown[] = [customerId];
     if (status) {
-        conditions.push(`status = $${values.length + 1}`);
-        values.push(status);
+        const statuses = status.split(",").filter(Boolean);
+        if (statuses.length > 0) {
+            conditions.push(`status = ANY($${values.length + 1})`);
+            values.push(statuses);
+        }
     }
     const res = await query<{ total: number }>(
         `SELECT COUNT(*)::int AS total FROM job_requests WHERE ${conditions.join(" AND ")}`,

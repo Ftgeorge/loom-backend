@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { createSkillSchema } from "../validators/skill.validators";
 import { createSkillIfNotExists } from "../services/skill.service";
+import { findAllSkills } from "../repositories/skill.repo";
 
 export const skillRouter = Router();
 
@@ -15,5 +16,14 @@ skillRouter.post(
 
     const skill = await createSkillIfNotExists(parsed.data.name);
     return res.status(201).json(skill);
+  })
+);
+
+skillRouter.get(
+  "/",
+  asyncHandler(async (_req, res) => {
+    const { findAllSkills } = await import("../repositories/skill.repo");
+    const skills = await findAllSkills();
+    return res.json(skills);
   })
 );

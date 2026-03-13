@@ -13,3 +13,26 @@ export async function addSkillToArtisan(input: {
 
   return { ok: true };
 }
+
+export async function removeSkillFromArtisan(input: {
+  artisanProfileId: string;
+  skillId: string;
+}) {
+  await query(
+    `DELETE FROM artisan_skills
+     WHERE artisan_profile_id = $1 AND skill_id = $2`,
+    [input.artisanProfileId, input.skillId]
+  );
+  return { ok: true };
+}
+
+export async function listArtisanSkills(artisanProfileId: string) {
+  const res = await query<{ skill_id: string; name: string }>(
+    `SELECT s.id as skill_id, s.name
+     FROM skills s
+     JOIN artisan_skills ask ON ask.skill_id = s.id
+     WHERE ask.artisan_profile_id = $1`,
+    [artisanProfileId]
+  );
+  return res.rows;
+}

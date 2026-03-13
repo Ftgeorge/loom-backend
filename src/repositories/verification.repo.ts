@@ -37,3 +37,43 @@ export async function findVerificationByArtisanId(artisanProfileId: string) {
     );
     return res.rows[0] ?? null;
 }
+
+export type VerificationJoinRow = VerificationRow & {
+    first_name: string;
+    last_name: string;
+    email: string;
+    bio: string | null;
+};
+
+export async function listAllVerifications(status?: string) {
+    let sql = `
+        SELECT 
+            av.*,
+            u.first_name,
+            u.last_name,
+            u.email,
+            ap.bio
+        FROM artisan_verifications av
+        JOIN artisan_profiles ap ON ap.id = av.artisan_profile_id
+        JOIN users u ON u.id = ap.user_id
+    `;
+    const values: string[] = [];
+    if (status) {
+        sql += ` WHERE av.status = $1`;
+        values.push(status);
+    }
+    sql += ` ORDER BY av.created_at DESC`;
+    const res = await query<VerificationJoinRow>(sql, values);
+    return res.rows;
+}
+
+export async function updateVerificationStatus(id: string, status: 'approved' | 'rejected', reason?: string) {
+    const res = await query<VerificationRow>(
+        `UPDATE artisan_verifications
+         SET status = $1, rejection_reason = $2, updated_at = NOW()
+         WHERE id = $3
+         RETURNING *`,
+        [status, reason ?? null, id]
+    );
+    return res.rows[0];
+}

@@ -92,3 +92,16 @@ export async function updateUserById(
 
     return result.rows[0] ?? null;
 }
+
+export async function listAllUsers() {
+    const res = await query<UserRow>(
+        `SELECT id, email, first_name, last_name, phone, role, created_at, area, city, state, avatar_url
+         FROM users
+         ORDER BY created_at DESC`
+    );
+    return res.rows;
+}
+
+export async function deleteUserById(userId: string) {
+    await query(`DELETE FROM users WHERE id = $1`, [userId]);
+}

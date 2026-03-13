@@ -7,6 +7,8 @@ import {
     upsertThread,
     insertMessage,
 } from "../repositories/thread.repo";
+import { findJobById } from "../repositories/job.read.repo";
+import { findArtisanByUserId } from "../repositories/artisan.list.repo";
 import { z } from "zod";
 
 function qInt(val: unknown, def: number, max: number): number {
@@ -52,11 +54,36 @@ threadRouter.post(
         if (!parsed.success) {
             return res.status(400).json({ error: "Invalid body", details: parsed.error.flatten() });
         }
+
+        const { artisanProfileId, jobRequestId } = parsed.data;
+        let customerId = req.user!.id;
+        let finalArtisanProfileId = artisanProfileId;
+
+        // If the logged-in user is an artisan, they are likely messaging a customer
+        if (req.user!.role === "artisan") {
+            if (!jobRequestId) {
+                return res.status(400).json({ error: "Job request ID is required for artisans to initiate chat" });
+            }
+            
+            const job = await findJobById(jobRequestId);
+            if (!job) return res.status(404).json({ error: "Job not found" });
+            
+            // Security: ensure this artisan is either assigned or matched? 
+            // For now, let's just use the customer_id from the job
+            customerId = job.customer_id;
+            
+            // We also need the artisan's profile ID
+            const artisan = await findArtisanByUserId(req.user!.id);
+            if (!artisan) return res.status(404).json({ error: "Artisan profile not found" });
+            finalArtisanProfileId = artisan.artisan_profile_id;
+        }
+
         const thread = await upsertThread({
-            customerId: req.user!.id,
-            artisanProfileId: parsed.data.artisanProfileId,
-            jobRequestId: parsed.data.jobRequestId,
+            customerId,
+            artisanProfileId: finalArtisanProfileId,
+            jobRequestId,
         });
+        
         return res.status(201).json(thread);
     })
 );
