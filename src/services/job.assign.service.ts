@@ -2,6 +2,7 @@ import { withTx } from "../db/tx";
 import { findArtisanProfileById } from "../repositories/artisan.read.repo";
 import { findJobById } from "../repositories/job.read.repo";
 import { assignJobTx } from "../repositories/job.repo.tx";
+import { NotificationService } from "./notification.service";
 
 export async function assignJob(input: {
     jobId: string;
@@ -29,7 +30,11 @@ export async function assignJob(input: {
     const updated = await withTx(async (client) => {
         const res = await assignJobTx(client, input);
         return res;
-    })
+    });
+
+    // Notify the artisan
+    NotificationService.notifyJobAssigned(artisan.user_id, job.description)
+        .catch(err => console.error("[Notification] Failed to notify job assignment:", err));
 
     return {ok: true as const, status: 200, data: updated};
 }

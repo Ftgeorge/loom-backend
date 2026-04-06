@@ -17,8 +17,8 @@ export async function completeJob(input: {
   const job = await findJobById(input.jobId);
   if (!job) return { ok: false as const, status: 404, error: "Job not found" };
 
-  if (job.status !== "assigned") {
-    return { ok: false as const, status: 400, error: "Job is not assigned" };
+  if (job.status !== "assigned" && job.status !== "accepted" && job.status !== "on_the_way" && job.status !== "in_progress") {
+    return { ok: false as const, status: 400, error: "Job is in a state that cannot be completed" };
   }
 
   if (job.assigned_artisan_id !== artisanProfileId) {

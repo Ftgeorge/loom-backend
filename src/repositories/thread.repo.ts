@@ -71,11 +71,12 @@ export async function findMessagesByThread(threadId: string, limit = 50, offset 
          FROM messages m
          JOIN users u ON u.id = m.sender_id
          WHERE m.thread_id = $1
-         ORDER BY m.sent_at ASC
+         ORDER BY m.sent_at DESC
          LIMIT $2 OFFSET $3`,
         [threadId, limit, offset]
     );
-    return res.rows;
+    // Reverse to return in chronological (ASC) order
+    return res.rows.reverse();
 }
 
 /** Create or fetch existing thread for a customer+artisan pair */
@@ -116,4 +117,33 @@ export async function insertMessage(input: {
         [input.text, msg.sent_at, input.threadId]
     );
     return msg;
+}
+
+/** Get a single thread by ID with basic participant user IDs */
+export async function findThreadById(id: string) {
+    const res = await query<{
+        id: string;
+        customer_id: string;
+        artisan_user_id: string;
+        artisan_profile_id: string;
+    }>(
+        `SELECT mt.id, mt.customer_id, ap.user_id as artisan_user_id, mt.artisan_profile_id
+         FROM message_threads mt
+         JOIN artisan_profiles ap ON ap.id = mt.artisan_profile_id
+         WHERE mt.id = $1`,
+        [id]
+    );
+    return res.rows[0];
+}
+
+/** Mark messages as read in a thread for a specific user (the recipient) */
+export async function markMessagesAsRead(threadId: string, userId: string) {
+    await query(
+        `UPDATE messages
+         SET read_at = now()
+         WHERE thread_id = $1
+           AND sender_id != $2
+           AND read_at IS NULL`,
+        [threadId, userId]
+    );
 }

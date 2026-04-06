@@ -32,6 +32,20 @@ export async function completeJobTx(
     return res.rows[0] ?? null;
 }
 
+export async function updateJobStatusTx(
+    client: PoolClient,
+    input: { jobId: string; status: JobRow["status"] }
+) {
+    const res = await client.query<JobRow>(
+        `UPDATE job_requests
+         SET status = $2
+         WHERE id = $1
+         RETURNING id, customer_id, title, description, location, status, assigned_artisan_id, budget, urgency, created_at`,
+        [input.jobId, input.status]
+    );
+    return res.rows[0] ?? null;
+}
+
 export async function cancelJobTx(
     client: PoolClient,
     input: { jobId: string; customerId: string }

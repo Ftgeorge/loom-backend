@@ -7,6 +7,7 @@ export type NotificationRow = {
     title: string;
     body: string;
     read: boolean;
+    metadata: any;
     created_at: string;
 };
 
@@ -45,14 +46,26 @@ export async function createNotification(input: {
     type?: string;
     title: string;
     body: string;
+    metadata?: any;
 }) {
     const res = await query<NotificationRow>(
-        `INSERT INTO notifications (user_id, type, title, body)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, user_id, type, title, body, read, created_at`,
-        [input.userId, input.type ?? "system", input.title, input.body]
+        `INSERT INTO notifications (user_id, type, title, body, metadata)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, user_id, type, title, body, read, metadata, created_at`,
+        [input.userId, input.type ?? "system", input.title, input.body, input.metadata || null]
     );
     return res.rows[0];
+}
+
+export async function markNotificationsAsReadByMetadata(userId: string, key: string, value: any) {
+    await query(
+        `UPDATE notifications
+         SET read = true
+         WHERE user_id = $1
+           AND metadata->>$2 = $3
+           AND read = false`,
+        [userId, key, String(value)]
+    );
 }
 
 export async function countUnreadNotifications(userId: string) {

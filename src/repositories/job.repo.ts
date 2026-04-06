@@ -8,7 +8,7 @@ export type JobRow = {
   location: string;
   budget: number;
   urgency: string;
-  status: "open" | "assigned" | "completed" | "cancelled";
+  status: "open" | "assigned" | "accepted" | "on_the_way" | "in_progress" | "completed" | "cancelled";
   assigned_artisan_id: string | null;
   created_at: string;
 };

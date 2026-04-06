@@ -68,11 +68,11 @@ export async function listAllVerifications(status?: string) {
 }
 
 export async function updateVerificationStatus(id: string, status: 'approved' | 'rejected', reason?: string) {
-    const res = await query<VerificationRow>(
+    const res = await query<VerificationRow & { user_id: string }>(
         `UPDATE artisan_verifications
          SET status = $1, rejection_reason = $2, updated_at = NOW()
          WHERE id = $3
-         RETURNING *`,
+         RETURNING artisan_verifications.*, (SELECT user_id FROM artisan_profiles WHERE id = artisan_verifications.artisan_profile_id) as user_id`,
         [status, reason ?? null, id]
     );
     return res.rows[0];

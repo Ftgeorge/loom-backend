@@ -12,6 +12,16 @@ export async function findUserByEmail(email: string) {
     return res.rows[0] ?? null;
 }
 
+export async function findUserById(id: string) {
+    const res = await query<UserRow>(
+        `SELECT id, email, first_name, last_name, phone, role, created_at, area, city, state, lat, lng, interests, avatar_url
+        FROM users
+        WHERE id = $1`,
+        [id]
+    );
+    return res.rows[0] ?? null;
+}
+
 export async function findUserByPhone(phone: string) {
     const res = await query<UserRow>(
         `SELECT id, email, first_name, last_name, phone, role, created_at, area, city, state, lat, lng, interests, avatar_url

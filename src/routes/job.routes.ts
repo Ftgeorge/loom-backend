@@ -10,6 +10,7 @@ import { rateJobSchema } from "../validators/job.validators";
 import { rateJob } from "../services/job.rate.service";
 import { cancelJob } from "../services/job.cancel.service";
 import { acceptJob } from "../services/job.accept.service";
+import { updateJobStatus } from "../services/job.status.service";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireRole } from "../middleware/requireRole";
 
@@ -146,6 +147,26 @@ jobRouter.post(
       jobId: String(req.params.jobId),
       artisanUserId: req.user!.id,
     });
+    if (!result.ok) return res.status(result.status).json({ error: result.error });
+    return res.status(result.status).json(result.data);
+  })
+);
+
+// ─── POST /jobs/:jobId/status ────────────────────────────
+jobRouter.post(
+  "/:jobId/status",
+  requireAuth,
+  requireRole("artisan"),
+  asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ error: "Status is required" });
+
+    const result = await updateJobStatus({
+      jobId: String(req.params.jobId),
+      artisanUserId: req.user!.id,
+      status: status,
+    });
+    
     if (!result.ok) return res.status(result.status).json({ error: result.error });
     return res.status(result.status).json(result.data);
   })

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { listAllUsers, deleteUserById } from "../repositories/user.repo";
 import { listAllVerifications, updateVerificationStatus } from "../repositories/verification.repo";
+import { NotificationService } from "../services/notification.service";
 
 export const adminRouter = Router();
 
@@ -29,5 +30,12 @@ adminRouter.patch("/verifications/:id/status", asyncHandler(async (req, res) => 
         return res.status(400).json({ error: "Invalid status" });
     }
     const updated = await updateVerificationStatus(String(req.params.id), status, reason);
+    
+    if (updated) {
+        // Notify the artisan
+        NotificationService.notifyVerificationStatus(updated.user_id, status as any, reason)
+            .catch(err => console.error("[Notification] Failed to notify verification status:", err));
+    }
+
     res.json(updated);
 }));
