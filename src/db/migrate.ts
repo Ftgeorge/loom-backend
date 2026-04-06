@@ -19,7 +19,7 @@ async function hasMigrationRun(filename: string) {
     `SELECT 1 FROM _migrations WHERE filename = $1`,
     [filename]
   );
-  return res.rowCount > 0;
+  return (res.rowCount ?? 0) > 0;
 }
 
 async function markMigrationRun(filename: string) {

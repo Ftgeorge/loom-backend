@@ -1,14 +1,16 @@
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 
+import { UserRole } from "../repositories/user.types";
+
 export type JwtPayload = {
     sub: string;
-    role: "customer" | "artisan";
+    role: UserRole;
 };
 
 export function signToken(payload: JwtPayload) {
-    return jwt.sign(payload, env.JWT_SECRET, {
-        expiresIn: env.JWT_EXPIRES_IN,
+    return jwt.sign(payload as object, env.JWT_SECRET, {
+        expiresIn: env.JWT_EXPIRES_IN as any,
     });
 }
 

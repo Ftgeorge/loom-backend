@@ -11,7 +11,7 @@ export async function getJobMatches(input: { jobId: string; skill: string }) {
         return { ok: false as const, status: 400, error: "Job is not open" };
     }
 
-    const artisans = await findArtisansBySkill(input.skill, 20, 0);
+    const artisans = await findArtisansBySkill({ skill: input.skill, limit: 20, offset: 0 });
 
     return {
         ok: true as const,

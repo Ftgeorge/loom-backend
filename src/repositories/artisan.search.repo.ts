@@ -88,6 +88,9 @@ export async function findArtisansBySkill(params: {
 
 export async function countArtisanBySkill(params: {
     skill: string;
+    city?: string;
+    state?: string;
+    area?: string;
 }) {
     const { skill } = params;
     const normalized = skill.trim().toLowerCase();

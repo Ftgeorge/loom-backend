@@ -22,7 +22,6 @@ skillRouter.post(
 skillRouter.get(
   "/",
   asyncHandler(async (_req, res) => {
-    const { findAllSkills } = await import("../repositories/skill.repo");
     const skills = await findAllSkills();
     return res.json(skills);
   })
